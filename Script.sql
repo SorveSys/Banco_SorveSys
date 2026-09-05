@@ -88,7 +88,8 @@ data_hora TIMESTAMP NOT NULL,
 configuracao_maquina_fk INT,
 configuracao_componente_fk INT,
 metrica_fk INT,
-FOREIGN KEY (configuracao_maquina_fk, configuracao_componente_fk) REFERENCES configuracao(maquina_fk, componente_fk),
+FOREIGN KEY (configuracao_maquina_fk, configuracao_componente_fk, configuracao_status_monitor_fk)
+REFERENCES configuracao(maquina_fk, componente_fk, status_monitor_fk),
 FOREIGN KEY (metrica_fk) REFERENCES metrica(id)
 );
 
