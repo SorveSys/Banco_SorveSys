@@ -17,6 +17,11 @@ id INT PRIMARY KEY AUTO_INCREMENT,
 unidade_medida VARCHAR(45) NOT NULL
 );
 
+CREATE TABLE status_monitor (
+id INT PRIMARY KEY AUTO_INCREMENT,
+estado VARCHAR(15) NOT NULL
+);
+
 CREATE TABLE usuario (
 id INT PRIMARY KEY AUTO_INCREMENT,
 nome VARCHAR(100) NOT NULL,
@@ -70,9 +75,11 @@ FOREIGN KEY (alerta_fk) REFERENCES alerta(id)
 CREATE TABLE configuracao (
 maquina_fk INT,
 componente_fk INT,
-PRIMARY KEY (maquina_fk, componente_fk),
+status_monitor_fk INT,
+PRIMARY KEY (maquina_fk, componente_fk, status_monitor_fk),
 FOREIGN KEY (maquina_fk) REFERENCES maquina(id),
-FOREIGN KEY (componente_fk) REFERENCES componente(id)
+FOREIGN KEY (componente_fk) REFERENCES componente(id),
+FOREIGN KEY (status_monitor_fk) REFERENCES status_monitor(id)
 );
 
 CREATE TABLE leitura (
