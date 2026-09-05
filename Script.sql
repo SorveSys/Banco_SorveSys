@@ -65,7 +65,6 @@ datacenter_fk INT, FOREIGN KEY (datacenter_fk) REFERENCES datacenter(id)
 
 CREATE TABLE componente (
 id INT PRIMARY KEY AUTO_INCREMENT,
-valor DOUBLE NOT NULL,
 tipo_componente_fk INT,
 alerta_fk INT,
 FOREIGN KEY (tipo_componente_fk) REFERENCES tipo_componente(id),
@@ -84,11 +83,14 @@ FOREIGN KEY (status_monitor_fk) REFERENCES status_monitor(id)
 
 CREATE TABLE leitura (
 id INT PRIMARY KEY AUTO_INCREMENT,
+valor DOUBLE NOT NULL,
 data_hora TIMESTAMP NOT NULL,
 configuracao_maquina_fk INT,
 configuracao_componente_fk INT,
+configuracao_status_monitor_fk INT,
 metrica_fk INT,
-FOREIGN KEY (configuracao_maquina_fk, configuracao_componente_fk) REFERENCES configuracao(maquina_fk, componente_fk),
+FOREIGN KEY (configuracao_maquina_fk, configuracao_componente_fk, configuracao_status_monitor_fk)
+REFERENCES configuracao(maquina_fk, componente_fk, status_monitor_fk),
 FOREIGN KEY (metrica_fk) REFERENCES metrica(id)
 );
 
