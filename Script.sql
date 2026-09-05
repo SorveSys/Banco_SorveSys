@@ -65,6 +65,7 @@ datacenter_fk INT, FOREIGN KEY (datacenter_fk) REFERENCES datacenter(id)
 
 CREATE TABLE componente (
 id INT PRIMARY KEY AUTO_INCREMENT,
+valor_maximo DOUBLE NOT NULL,
 tipo_componente_fk INT,
 alerta_fk INT,
 FOREIGN KEY (tipo_componente_fk) REFERENCES tipo_componente(id),
