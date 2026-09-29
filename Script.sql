@@ -1,356 +1,376 @@
-CREATE DATABASE SorveSys;
-
-USE SorveSys;
+DROP DATABASE IF EXISTS sorvesys;
+CREATE DATABASE sorvesys;
+USE sorvesys;
 
 CREATE TABLE empresa (
-id INT PRIMARY KEY AUTO_INCREMENT,
-razao_social VARCHAR(100) NOT NULL,
-nome_fantasia VARCHAR(100) NOT NULL,
-cnpj CHAR(14) UNIQUE NOT NULL,
-email VARCHAR(45) UNIQUE NOT NULL,
-telefone VARCHAR(20) NOT NULL,
-data_cadastro TIMESTAMP NOT NULL
-);
-
-CREATE TABLE metrica (
-id INT PRIMARY KEY AUTO_INCREMENT,
-unidade_medida VARCHAR(45) NOT NULL
-);
-
-CREATE TABLE status_monitor (
-id INT PRIMARY KEY AUTO_INCREMENT,
-estado VARCHAR(15) NOT NULL
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    razao_social VARCHAR(100) NOT NULL,
+    nome_fantasia VARCHAR(100),
+    cnpj CHAR(14) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL,
+    telefone VARCHAR(20),
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE usuario (
-id INT PRIMARY KEY AUTO_INCREMENT,
-nome VARCHAR(100) NOT NULL,
-email VARCHAR(100) UNIQUE NOT NULL,
-senha VARCHAR(200) NOT NULL,
-telefone VARCHAR(20) NOT NULL,
-cargo VARCHAR(45) NOT NULL,
-data_cadastro TIMESTAMP NOT NULL,
-status VARCHAR(15) NOT NULL,
-empresa_fk INT, FOREIGN KEY (empresa_fk) REFERENCES empresa(id)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    senha VARCHAR(200) NOT NULL,
+    telefone VARCHAR(20),
+    cargo VARCHAR(45),
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    status VARCHAR(15) DEFAULT 'ATIVO',
+    empresa_fk INT NOT NULL,
+
+    CONSTRAINT fk_usuario_empresa
+        FOREIGN KEY (empresa_fk) REFERENCES empresa(id)
 );
 
-CREATE TABLE alerta (
-id INT PRIMARY KEY AUTO_INCREMENT,
-valor_limite DECIMAL(10,2) NOT NULL,
-empresa_fk INT, FOREIGN KEY (empresa_fk) REFERENCES empresa(id)
-);
-
-CREATE TABLE datacenter (
-id INT PRIMARY KEY AUTO_INCREMENT,
-nome VARCHAR(100) NOT NULL,
-coordenadas VARCHAR(45),
-empresa_fk INT, FOREIGN KEY (empresa_fk) REFERENCES empresa(id)
+CREATE TABLE metrica (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(50) NOT NULL,
+    unidade_medida VARCHAR(45) NOT NULL
 );
 
 CREATE TABLE tipo_componente (
-id INT PRIMARY KEY AUTO_INCREMENT,
-tipo VARCHAR(30) NOT NULL,
-metrica_fk INT, FOREIGN KEY (metrica_fk) REFERENCES metrica(id)
-);
-
-CREATE TABLE maquina (
-id INT PRIMARY KEY AUTO_INCREMENT,
-hostname VARCHAR(100) NOT NULL,
-mac_adress VARCHAR(30) NOT NULL,
-sistema_operacional VARCHAR(10) NOT NULL,
-versao_so VARCHAR(10) NOT NULL,
-data_cadastro TIMESTAMP NOT NULL,
-datacenter_fk INT, FOREIGN KEY (datacenter_fk) REFERENCES datacenter(id)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tipo VARCHAR(30) NOT NULL
 );
 
 CREATE TABLE componente (
-id INT PRIMARY KEY AUTO_INCREMENT,
-valor_maximo DOUBLE NOT NULL,
-tipo_componente_fk INT,
-alerta_fk INT,
-FOREIGN KEY (tipo_componente_fk) REFERENCES tipo_componente(id),
-FOREIGN KEY (alerta_fk) REFERENCES alerta(id)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tipo_componente_fk INT NOT NULL,
+
+    CONSTRAINT fk_componente_tipo
+        FOREIGN KEY (tipo_componente_fk)
+        REFERENCES tipo_componente(id)
+);
+
+CREATE TABLE componente_metrica (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    componente_fk INT NOT NULL,
+    metrica_fk INT NOT NULL,
+
+    CONSTRAINT fk_componente_metrica_componente
+        FOREIGN KEY (componente_fk) REFERENCES componente(id),
+
+    CONSTRAINT fk_componente_metrica_metrica
+        FOREIGN KEY (metrica_fk) REFERENCES metrica(id),
+
+    CONSTRAINT uk_componente_metrica
+        UNIQUE (componente_fk, metrica_fk)
+);
+
+CREATE TABLE datacenter (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    coordenadas VARCHAR(45),
+    empresa_fk INT NOT NULL,
+
+    CONSTRAINT fk_datacenter_empresa
+        FOREIGN KEY (empresa_fk) REFERENCES empresa(id)
+);
+
+-- TABELA MAQUINA
+CREATE TABLE maquina (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hostname VARCHAR(100) NOT NULL,
+    mac_address VARCHAR(30) NOT NULL UNIQUE,
+    sistema_operacional VARCHAR(45),
+    versao_so VARCHAR(45),
+    data_cadastro DATETIME DEFAULT CURRENT_TIMESTAMP,
+    datacenter_fk INT NOT NULL,
+
+    CONSTRAINT fk_maquina_datacenter
+        FOREIGN KEY (datacenter_fk) REFERENCES datacenter(id)
+);
+
+CREATE TABLE status_monitor (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    estado VARCHAR(15) NOT NULL
 );
 
 CREATE TABLE configuracao (
-maquina_fk INT,
-componente_fk INT,
-status_monitor_fk INT,
-PRIMARY KEY (maquina_fk, componente_fk, status_monitor_fk),
-FOREIGN KEY (maquina_fk) REFERENCES maquina(id),
-FOREIGN KEY (componente_fk) REFERENCES componente(id),
-FOREIGN KEY (status_monitor_fk) REFERENCES status_monitor(id)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    maquina_fk INT NOT NULL,
+    componente_fk INT NOT NULL,
+    status_monitor_fk INT NOT NULL,
+
+    CONSTRAINT fk_config_maquina
+        FOREIGN KEY (maquina_fk) REFERENCES maquina(id),
+
+    CONSTRAINT fk_config_componente
+        FOREIGN KEY (componente_fk) REFERENCES componente(id),
+
+    CONSTRAINT fk_config_status
+        FOREIGN KEY (status_monitor_fk) REFERENCES status_monitor(id),
+
+    CONSTRAINT uk_maquina_componente
+        UNIQUE (maquina_fk, componente_fk)
+);
+
+-- TABELA ALERTA
+CREATE TABLE alerta (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    valor_limite DECIMAL(10,2) NOT NULL,
+    empresa_fk INT NOT NULL,
+    componente_metrica_fk INT NOT NULL,
+
+    CONSTRAINT fk_alerta_empresa
+        FOREIGN KEY (empresa_fk) REFERENCES empresa(id),
+
+    CONSTRAINT fk_alerta_componente_metrica
+        FOREIGN KEY (componente_metrica_fk)
+        REFERENCES componente_metrica(id),
+
+    CONSTRAINT uk_alerta_componente_metrica
+        UNIQUE (componente_metrica_fk)
 );
 
 CREATE TABLE leitura (
-id INT PRIMARY KEY AUTO_INCREMENT,
-valor DOUBLE NOT NULL,
-data_hora TIMESTAMP NOT NULL,
-configuracao_maquina_fk INT,
-configuracao_componente_fk INT,
-configuracao_status_monitor_fk INT,
-metrica_fk INT,
-FOREIGN KEY (configuracao_maquina_fk, configuracao_componente_fk, configuracao_status_monitor_fk)
-REFERENCES configuracao(maquina_fk, componente_fk, status_monitor_fk),
-FOREIGN KEY (metrica_fk) REFERENCES metrica(id)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    valor DECIMAL(10,2) NOT NULL,
+    data_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+    configuracao_fk INT NOT NULL,
+    componente_metrica_fk INT NOT NULL,
+
+    CONSTRAINT fk_leitura_configuracao
+        FOREIGN KEY (configuracao_fk) REFERENCES configuracao(id),
+
+    CONSTRAINT fk_leitura_componente_metrica
+        FOREIGN KEY (componente_metrica_fk)
+        REFERENCES componente_metrica(id)
 );
 
 CREATE TABLE leitura_alerta (
-id INT PRIMARY KEY AUTO_INCREMENT,
-leitura_fk INT,
-FOREIGN KEY (leitura_fk) REFERENCES leitura(id)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    leitura_fk INT NOT NULL,
+    alerta_fk INT NOT NULL,
+    data_ocorrencia DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_alerta_leitura
+        FOREIGN KEY (leitura_fk) REFERENCES leitura(id),
+
+    CONSTRAINT fk_leitura_alerta_alerta
+        FOREIGN KEY (alerta_fk) REFERENCES alerta(id)
 );
 
--- Mostrar todas as máquinas, suas empresas e seus datacenters.
-CREATE VIEW vw_infraestrutura AS
+
+
+INSERT INTO empresa
+    (razao_social, nome_fantasia, cnpj, email)
+VALUES
+    ('Empresa Teste LTDA', 'SorveSys',
+     '12345678000199', 'teste@sorvesys.com');
+
+INSERT INTO datacenter
+    (nome, empresa_fk)
+VALUES
+    ('Datacenter SP', 1);
+
+INSERT INTO maquina
+    (hostname, mac_address, sistema_operacional,
+     versao_so, datacenter_fk)
+VALUES
+    ('maquina-01', '00:11:22:33:44:55',
+     'Linux', 'Ubuntu 22.04', 1);
+
+INSERT INTO status_monitor (estado)
+VALUES ('ATIVO');
+
+INSERT INTO metrica (nome, unidade_medida)
+VALUES
+    ('Porcentagem', '%'),
+    ('Velocidade', 'Mbps'),
+    ('Latencia', 'ms'),
+    ('Tempo CPU', 's'),
+    ('CPUs lógicas', 'núcleos'),
+    ('RAM Total', 'GB'),
+    ('RAM Disponível', 'GB'),
+    ('RAM Usada', 'GB'),
+    ('RAM Livre', 'GB'),
+    ('Uso da RAM', '%'),
+    ('Disco Total', 'GB'),
+    ('Disco Usado', 'GB'),
+    ('Disco Livre', 'GB'),
+    ('Uso do Disco', '%');
+
+INSERT INTO tipo_componente (tipo)
+VALUES
+    ('CPU'),
+    ('Rede'),
+    ('Memória'),
+    ('Disco');
+
+INSERT INTO componente (tipo_componente_fk)
+SELECT id
+FROM tipo_componente
+WHERE tipo = 'CPU';
+
+INSERT INTO componente (tipo_componente_fk)
+SELECT id
+FROM tipo_componente
+WHERE tipo = 'Rede';
+
+INSERT INTO componente (tipo_componente_fk)
+SELECT id
+FROM tipo_componente
+WHERE tipo = 'Memória';
+
+INSERT INTO componente (tipo_componente_fk)
+SELECT id
+FROM tipo_componente
+WHERE tipo = 'Disco';
+
+INSERT INTO componente_metrica (componente_fk, metrica_fk)
+SELECT c.id, m.id
+FROM componente c
+JOIN tipo_componente t
+    ON t.id = c.tipo_componente_fk
+JOIN metrica m
+    ON m.nome IN ('Porcentagem', 'Tempo CPU', 'CPUs lógicas')
+WHERE t.tipo = 'CPU';
+
+INSERT INTO componente_metrica (componente_fk, metrica_fk)
+SELECT c.id, m.id
+FROM componente c
+JOIN tipo_componente t
+    ON t.id = c.tipo_componente_fk
+JOIN metrica m
+    ON m.nome IN ('Velocidade', 'Latencia')
+WHERE t.tipo = 'Rede';
+
+INSERT INTO componente_metrica (componente_fk, metrica_fk)
+SELECT c.id, m.id
+FROM componente c
+JOIN tipo_componente t
+    ON t.id = c.tipo_componente_fk
+JOIN metrica m
+    ON m.nome IN (
+        'RAM Total',
+        'RAM Disponível',
+        'RAM Usada',
+        'RAM Livre',
+        'Uso da RAM'
+    )
+WHERE t.tipo = 'Memória';
+
+INSERT INTO componente_metrica (componente_fk, metrica_fk)
+SELECT c.id, m.id
+FROM componente c
+JOIN tipo_componente t
+    ON t.id = c.tipo_componente_fk
+JOIN metrica m
+    ON m.nome IN (
+        'Disco Total',
+        'Disco Usado',
+        'Disco Livre',
+        'Uso do Disco'
+    )
+WHERE t.tipo = 'Disco';
+
+
+INSERT INTO configuracao
+    (maquina_fk, componente_fk, status_monitor_fk)
+SELECT maq.id, c.id, sm.id FROM maquina maq
+CROSS JOIN componente c
+JOIN status_monitor sm
+    ON sm.estado = 'ATIVO'
+JOIN tipo_componente t
+    ON t.id = c.tipo_componente_fk
+WHERE maq.hostname = 'maquina-01'
+  AND t.tipo IN ('CPU', 'Rede', 'Memória', 'Disco');
+
+INSERT INTO alerta
+    (valor_limite, empresa_fk, componente_metrica_fk)
+SELECT 90.00, e.id,cm.id FROM empresa e
+JOIN componente_metrica cm
+    ON cm.metrica_fk = (SELECT id FROM metrica WHERE nome = 'Porcentagem')
+JOIN componente c
+    ON c.id = cm.componente_fk
+JOIN tipo_componente t
+    ON t.id = c.tipo_componente_fk
+WHERE e.nome_fantasia = 'SorveSys'
+  AND t.tipo = 'CPU';
+
+INSERT INTO alerta (valor_limite, empresa_fk, componente_metrica_fk)
+SELECT 1000.00, e.id, cm.id
+FROM empresa e
+JOIN componente_metrica cm
+    ON cm.metrica_fk = (SELECT id FROM metrica WHERE nome = 'Velocidade')
+JOIN componente c
+    ON c.id = cm.componente_fk
+JOIN tipo_componente t
+    ON t.id = c.tipo_componente_fk
+WHERE e.nome_fantasia = 'SorveSys'
+  AND t.tipo = 'Rede';
+
+INSERT INTO alerta
+    (valor_limite, empresa_fk, componente_metrica_fk)
 SELECT
-    e.nome_fantasia AS empresa,
-    d.nome AS datacenter,
-    m.id AS maquina_id,
-    m.hostname,
-    m.mac_adress,
-    m.sistema_operacional,
-    m.versao_so,
-    m.data_cadastro
-FROM empresa AS e
-JOIN datacenter AS d
-    ON d.empresa_fk = e.id
-JOIN maquina AS m
-    ON m.datacenter_fk = d.id;
-
--- Consulta do histórico de monitoramento das máquinas.
-CREATE VIEW vw_historico_monitoramento AS
-SELECT
-    m.id AS maquina_id,
-    m.hostname,
-    tc.tipo AS componente,
-    l.valor,
-    mt.unidade_medida,
-    l.data_hora
-FROM leitura AS l
-JOIN configuracao AS cfg
-	ON cfg.maquina_fk = l.configuracao_maquina_fk
-	AND cfg.componente_fk = l.configuracao_componente_fk
-	AND cfg.status_monitor_fk = l.configuracao_status_monitor_fk
-JOIN maquina AS m
-    ON m.id = cfg.maquina_fk
-JOIN componente AS c
-    ON c.id = cfg.componente_fk
-JOIN tipo_componente AS tc
-    ON tc.id = c.tipo_componente_fk
-JOIN metrica AS mt
-    ON mt.id = l.metrica_fk;
-
--- Mostrar as leituras que geraram alertas e os limites configurados.
-CREATE VIEW vw_alertas AS
-SELECT
-    la.id AS alerta_leitura_id,
-    m.hostname,
-    tc.tipo AS componente,
-    l.valor,
-    mt.unidade_medida,
-    a.valor_limite,
-    l.data_hora
-FROM leitura_alerta AS la
-JOIN leitura AS l
-    ON l.id = la.leitura_fk
-JOIN configuracao AS cfg
-	ON cfg.maquina_fk = l.configuracao_maquina_fk
-	AND cfg.componente_fk = l.configuracao_componente_fk
-	AND cfg.status_monitor_fk = l.configuracao_status_monitor_fk
-JOIN maquina AS m
-    ON m.id = cfg.maquina_fk
-JOIN componente AS c
-    ON c.id = cfg.componente_fk
-JOIN tipo_componente AS tc
-    ON tc.id = c.tipo_componente_fk
-JOIN metrica AS mt
-    ON mt.id = l.metrica_fk
-JOIN alerta AS a
-    ON a.id = c.alerta_fk;
-
--- Mostrar a quantidade de alertas registrados para cada máquina.
-CREATE VIEW vw_resumo_alertas_maquina AS
-SELECT
-    m.id AS maquina_id,
-    m.hostname,
-    COUNT(la.id) AS quantidade_alertas
-FROM leitura_alerta AS la
-JOIN leitura AS l
-    ON l.id = la.leitura_fk
-JOIN configuracao AS cfg
-    ON cfg.maquina_fk = l.configuracao_maquina_fk
-	AND cfg.componente_fk = l.configuracao_componente_fk
-	AND cfg.status_monitor_fk = l.configuracao_status_monitor_fk
-JOIN maquina AS m
-    ON m.id = cfg.maquina_fk
-GROUP BY
-    m.id,
-    m.hostname;
-
--- Consultar a infraestrutura cadastrada no sistema.
-SELECT *
-FROM vw_infraestrutura
-ORDER BY empresa, datacenter, hostname;
-
--- Consultar o histórico completo de monitoramento.
-SELECT *
-FROM vw_historico_monitoramento
-ORDER BY data_hora DESC;
-
--- Consultar todas as leituras que geraram alertas.
-SELECT *
-FROM vw_alertas
-ORDER BY data_hora DESC;
-
--- Consultar o resumo de alertas por máquina.
-SELECT *
-FROM vw_resumo_alertas_maquina
-ORDER BY quantidade_alertas DESC;
-
--- Mostrar quais componentes estão sendo monitorados em cada máquina e seu status.
-SELECT
-    m.hostname,
-    tc.tipo AS componente,
-    c.id AS componente_id,
-    sm.estado AS status_monitor
-FROM maquina AS m
-JOIN configuracao AS cfg
-    ON cfg.maquina_fk = m.id
-JOIN componente AS c
-    ON c.id = cfg.componente_fk
-JOIN tipo_componente AS tc
-    ON tc.id = c.tipo_componente_fk
-JOIN status_monitor AS sm
-    ON sm.id = cfg.status_monitor_fk
-ORDER BY m.hostname, tc.tipo;
-
--- Mostrar a unidade de medida utilizada por cada tipo de componente.
-SELECT
-    tc.tipo AS componente,
-    mt.unidade_medida
-FROM tipo_componente AS tc
-JOIN metrica AS mt
-    ON mt.id = tc.metrica_fk
-ORDER BY tc.tipo;
-
--- Consultar o histórico de leituras de uma máquina específica.
-SELECT
-    m.hostname,
-    tc.tipo AS componente,
-    l.valor,
-    mt.unidade_medida,
-    l.data_hora
-FROM leitura AS l
-JOIN configuracao AS cfg
-    ON cfg.maquina_fk = l.configuracao_maquina_fk
-	AND cfg.componente_fk = l.configuracao_componente_fk
-	AND cfg.status_monitor_fk = l.configuracao_status_monitor_fk
-JOIN maquina AS m
-    ON m.id = cfg.maquina_fk
-JOIN componente AS c
-    ON c.id = cfg.componente_fk
-JOIN tipo_componente AS tc
-    ON tc.id = c.tipo_componente_fk
-JOIN metrica AS mt
-    ON mt.id = l.metrica_fk
-WHERE m.id = 1
-ORDER BY l.data_hora DESC;
-
--- Calcular a média dos valores registrados para cada componente de cada máquina.
-SELECT
-    m.hostname,
-    tc.tipo AS componente,
-    ROUND(AVG(l.valor), 2) AS media_valor,
-    mt.unidade_medida
-FROM leitura AS l
-JOIN configuracao AS cfg
-    ON cfg.maquina_fk = l.configuracao_maquina_fk
-	AND cfg.componente_fk = l.configuracao_componente_fk
-	AND cfg.status_monitor_fk = l.configuracao_status_monitor_fk
-JOIN maquina AS m
-    ON m.id = cfg.maquina_fk
-JOIN componente AS c
-    ON c.id = cfg.componente_fk
-JOIN tipo_componente AS tc
-    ON tc.id = c.tipo_componente_fk
-JOIN metrica AS mt
-    ON mt.id = l.metrica_fk
-GROUP BY
-    m.id,
-    m.hostname,
-    tc.id,
-    tc.tipo,
-    mt.id,
-    mt.unidade_medida
-ORDER BY m.hostname, tc.tipo;
-
--- Identificar o maior valor registrado para cada componente de cada máquina.
-SELECT
-    m.hostname,
-    tc.tipo AS componente,
-    MAX(l.valor) AS maior_valor,
-    mt.unidade_medida
-FROM leitura AS l
-JOIN configuracao AS cfg
-    ON cfg.maquina_fk = l.configuracao_maquina_fk
-	AND cfg.componente_fk = l.configuracao_componente_fk
-	AND cfg.status_monitor_fk = l.configuracao_status_monitor_fk
-JOIN maquina AS m
-    ON m.id = cfg.maquina_fk
-JOIN componente AS c
-    ON c.id = cfg.componente_fk
-JOIN tipo_componente AS tc
-    ON tc.id = c.tipo_componente_fk
-JOIN metrica AS mt
-    ON mt.id = l.metrica_fk
-GROUP BY
-    m.id,
-    m.hostname,
-    tc.id,
-    tc.tipo,
-    mt.id,
-    mt.unidade_medida
-ORDER BY maior_valor DESC;
-
--- Identificar quais tipos de componentes geram mais alertas.
-SELECT
-    tc.tipo AS componente,
-    COUNT(la.id) AS quantidade_alertas
-FROM leitura_alerta AS la
-JOIN leitura AS l
-    ON l.id = la.leitura_fk
-JOIN configuracao AS cfg
-    ON cfg.maquina_fk = l.configuracao_maquina_fk
-	AND cfg.componente_fk = l.configuracao_componente_fk
-	AND cfg.status_monitor_fk = l.configuracao_status_monitor_fk
-JOIN componente AS c
-    ON c.id = cfg.componente_fk
-JOIN tipo_componente AS tc
-    ON tc.id = c.tipo_componente_fk
-GROUP BY
-    tc.id,
-    tc.tipo
-ORDER BY quantidade_alertas DESC;
-
--- Contabilizar a quantidade de alertas registrados para cada empresa.
-SELECT
-    e.nome_fantasia AS empresa,
-    COUNT(la.id) AS quantidade_alertas
-FROM leitura_alerta AS la
-JOIN leitura AS l
-    ON l.id = la.leitura_fk
-JOIN configuracao AS cfg
-    ON cfg.maquina_fk = l.configuracao_maquina_fk
-	AND cfg.componente_fk = l.configuracao_componente_fk
-	AND cfg.status_monitor_fk = l.configuracao_status_monitor_fk
-JOIN maquina AS m
-    ON m.id = cfg.maquina_fk
-JOIN datacenter AS d
-    ON d.id = m.datacenter_fk
-JOIN empresa AS e
-    ON e.id = d.empresa_fk
-GROUP BY
+    100.00,
     e.id,
-    e.nome_fantasia
-ORDER BY quantidade_alertas DESC;
+    cm.id
+FROM empresa e
+JOIN componente_metrica cm
+    ON cm.metrica_fk = (SELECT id FROM metrica WHERE nome = 'Latencia')
+JOIN componente c
+    ON c.id = cm.componente_fk
+JOIN tipo_componente t
+    ON t.id = c.tipo_componente_fk
+WHERE e.nome_fantasia = 'SorveSys'
+  AND t.tipo = 'Rede';
+
+INSERT INTO alerta (valor_limite, empresa_fk, componente_metrica_fk)
+SELECT 90.00, e.id, cm.id FROM empresa e
+JOIN componente_metrica cm
+    ON cm.metrica_fk = (
+        SELECT id FROM metrica WHERE nome = 'Uso da RAM'
+    )
+JOIN componente c
+    ON c.id = cm.componente_fk
+JOIN tipo_componente t
+    ON t.id = c.tipo_componente_fk
+WHERE e.nome_fantasia = 'SorveSys'
+  AND t.tipo = 'Memória';
+
+INSERT INTO alerta (valor_limite, empresa_fk, componente_metrica_fk)
+SELECT 90.00, e.id, cm.id FROM empresa e
+JOIN componente_metrica cm
+    ON cm.metrica_fk = (SELECT id FROM metrica WHERE nome = 'Uso do Disco')
+JOIN componente c
+    ON c.id = cm.componente_fk
+JOIN tipo_componente t
+    ON t.id = c.tipo_componente_fk
+WHERE e.nome_fantasia = 'SorveSys'
+  AND t.tipo = 'Disco';
+  
+  
+  
+-- VIEW Pra gente usar o csv no R
+CREATE VIEW vw_leituras_csv AS
+SELECT
+    l.id AS leitura_id,
+    m.nome AS metrica,
+    tc.tipo AS componente,
+    l.valor,
+    m.unidade_medida,
+    l.data_hora,
+    maq.hostname
+FROM leitura l
+JOIN componente_metrica cm
+    ON l.componente_metrica_fk = cm.id
+JOIN metrica m
+    ON cm.metrica_fk = m.id
+JOIN componente c
+    ON cm.componente_fk = c.id
+JOIN tipo_componente tc
+    ON c.tipo_componente_fk = tc.id
+JOIN configuracao cfg
+    ON l.configuracao_fk = cfg.id
+JOIN maquina maq
+    ON cfg.maquina_fk = maq.id;
+
+
+SELECT * FROM vw_leituras_csv;
