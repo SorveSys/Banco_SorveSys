@@ -43,13 +43,13 @@ CONSTRAINT check_servidor CHECK (tipo IN('transito', 'pagamento', 'auditoria'))
 -- TABELA TIPO DE COMPONENTE 
 CREATE TABLE componente (
 id INT PRIMARY KEY AUTO_INCREMENT,
-nome VARCHAR(100)
+nome VARCHAR(100) NOT NULL
 );
 
 -- TABELA METRICAS
 CREATE TABLE metrica (
 id INT PRIMARY KEY AUTO_INCREMENT,
-tipo VARCHAR(100),
+tipo VARCHAR(100) NOT NULL,
 fk_componente INT NOT NULL,
 CONSTRAINT fk_metrica_componente FOREIGN KEY (fk_componente)
 REFERENCES componente(id)
@@ -70,7 +70,7 @@ REFERENCES servidor(id)
 CREATE TABLE registro_monitoramento (
 id INT PRIMARY KEY AUTO_INCREMENT,
 fk_config INT NOT NULL,
-valor DECIMAL (5,2),
+valor DECIMAL (5,2) NOT NULL,
 CONSTRAINT fk_registro_config FOREIGN KEY (fk_config)
 REFERENCES config(id)
 );
@@ -79,8 +79,10 @@ REFERENCES config(id)
 CREATE TABLE IF NOT EXISTS alerta (
 id INT PRIMARY KEY AUTO_INCREMENT,
 categoria VARCHAR(15) NOT NULL,
-descricao VARCHAR(300),
+descricao VARCHAR(300) NOT NULL,
 chk_registro INT NOT NULL,
+fk_cofig INT NOT NULL,
+CONSTRAINT fk_alerta_config FOREIGN KEY (fk_config) REFERENCES config(id),
 CONSTRAINT chk_categoria_alerta CHECK (categoria IN('Normal', 'Moderado', 'Critico'))
 );
 
