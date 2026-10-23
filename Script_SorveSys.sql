@@ -70,7 +70,7 @@ CREATE TABLE registro_monitoramento (
   fk_config INT NOT NULL,
   fk_metrica INT NOT NULL,
   valor DECIMAL(5, 2) NOT NULL,
-  dt_hora DATETIME,
+  dt_hora DATETIME NOT NULL,
   CONSTRAINT fk_registro_config FOREIGN KEY (fk_config) REFERENCES config (id),
   CONSTRAINT fk_registro_metrica FOREIGN KEY (fk_metrica) REFERENCES metrica (id)
 );
