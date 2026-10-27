@@ -1,9 +1,9 @@
 # SCRIPT SQL — SORVESYS
 
 -- ATENÇÃO: este script apaga e recria o banco.
-DROP DATABASE IF EXISTS sorvesys;
-CREATE DATABASE sorvesys;
-USE sorvesys;
+DROP DATABASE IF EXISTS sorvesys_db;
+CREATE DATABASE sorvesys_db;
+USE sorvesys_db;
 
 -- =========================================
 -- 1. TABELA EMPRESA
