@@ -6,6 +6,13 @@ CREATE DATABASE sorvesys_db;
 USE sorvesys_db;
 
 -- =========================================
+-- CRIAÇÃO DO USUÁRIO RESTRITO PARA O PEDÁGIO
+-- =========================================
+CREATE USER IF NOT EXISTS 'agente_pedagio'@'%' IDENTIFIED BY 'SenhaCaptura123!';
+GRANT SELECT, INSERT ON sorvesys_db.* TO 'agente_pedagio'@'%';
+FLUSH PRIVILEGES;
+
+-- =========================================
 -- 1. TABELA EMPRESA
 -- =========================================
 CREATE TABLE empresa (
