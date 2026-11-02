@@ -188,6 +188,12 @@ VALUES
     ('Espaco em uso (%)', 3),
     ('Espaco disponivel (%)', 3);
 
+INSERT INTO metrica (tipo, fk_componente)
+VALUES
+    ('Latencia (ms)', 4),
+    ('Status Conectividade', 4),
+    ('Status Rede', 4);
+
 -- =========================================
 -- INSERTS: CONFIG
 -- Cada servidor terá uma configuração por componente.
