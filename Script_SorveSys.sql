@@ -15,6 +15,19 @@ CREATE TABLE perfil (
   id INT PRIMARY KEY AUTO_INCREMENT,
   tipo VARCHAR(100) NOT NULL,
   CONSTRAINT chk_tipo_usuario CHECK (tipo IN ('Analista', 'Gestor'))
+  
+);
+
+CREATE TABLE concessionaria (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nome_praca VARCHAR(150) NOT NULL,
+    rodovia VARCHAR(100) NOT NULL,
+    km DECIMAL(6,2) NOT NULL,
+    cidade VARCHAR(100) NOT NULL,
+    uf CHAR(2) NOT NULL,
+    fk_empresa INT NOT NULL,
+    CONSTRAINT fk_concessionaria_empresa 
+        FOREIGN KEY (fk_empresa) REFERENCES empresa(id)
 );
 
 -- TABELA USUARIO
@@ -24,9 +37,14 @@ CREATE TABLE usuario (
   email VARCHAR(350) NOT NULL,
   senha VARCHAR(300) NOT NULL,
   fk_empresa INT NOT NULL,
+  fk_concessionaria INT NULL,
   fk_tipo_usuario INT NOT NULL,
-  CONSTRAINT fk_usuario_empresa FOREIGN KEY (fk_empresa) REFERENCES empresa (id),
-  CONSTRAINT fk_usuario_perfil FOREIGN KEY (fk_tipo_usuario) REFERENCES perfil (id)
+  CONSTRAINT fk_usuario_empresa 
+        FOREIGN KEY (fk_empresa) REFERENCES empresa(id),
+    CONSTRAINT fk_usuario_concessionaria 
+        FOREIGN KEY (fk_concessionaria) REFERENCES concessionaria(id),
+    CONSTRAINT fk_usuario_perfil 
+        FOREIGN KEY (fk_tipo_usuario) REFERENCES perfil(id)
 ) AUTO_INCREMENT = 10000;
 
 -- TABELA SERVIDORES
@@ -34,8 +52,8 @@ CREATE TABLE servidor (
   id INT PRIMARY KEY AUTO_INCREMENT,
   tipo VARCHAR(100) NOT NULL,
   ip VARCHAR(100),
-  fk_empresa INT NOT NULL,
-  CONSTRAINT fk_servidores_empresa FOREIGN KEY (fk_empresa) REFERENCES empresa (id),
+  fk_concessionaria INT NOT NULL,
+  CONSTRAINT fk_servidores_concessionaria FOREIGN KEY (fk_concessionaria) REFERENCES concessionaria (id),
   CONSTRAINT check_servidor CHECK (
     tipo IN ('transito', 'pagamento', 'auditoria')
   )
@@ -88,6 +106,8 @@ CREATE TABLE alerta (
   )
 );
 
+
+
 -- INSERTS: TABELA EMPRESA
 INSERT INTO empresa (nome_fantasia, cnpj) VALUES
 ('AquaTech Solutions', '12345678000100'),
@@ -104,13 +124,18 @@ INSERT INTO usuario (nome, email, senha, fk_empresa, fk_tipo_usuario) VALUES
 ('Ana Oliveira', 'ana.oliveira@sorvesys.com', 'hash_senha_456', 2, 2),
 ('Lucas Martins', 'lucas.martins@aquatech.com', 'hash_senha_789', 1, 2);
 
--- TABELA SERVIDORES
-INSERT INTO servidor (tipo, ip, fk_empresa) VALUES
+INSERT INTO concessionaria (nome_praca, rodovia, km, cidade, uf, fk_empresa) 
+VALUES 
+('Praça Lapa', 'SP-280', 15.5, 'São Paulo', 'SP', 1),
+('Praça Barueri', 'SP-280', 26.0, 'Barueri', 'SP', 1);
+
+-- INSERTS: TABELA SERVIDORES
+INSERT INTO servidor (tipo, ip, fk_concessionaria) VALUES
 ('transito', '192.168.1.10', 1),
 ('pagamento', '192.168.1.15', 1),
 ('auditoria', '10.0.0.50', 2);
 
--- TABELA TIPO DE COMPONENTE
+-- INSERTS: TABELA TIPO DE COMPONENTE
 INSERT INTO componente (nome) VALUES
 ('CPU'),
 ('Memoria RAM'),
@@ -159,6 +184,7 @@ JOIN servidor s ON cfg.fk_servidor = s.id;
 SELECT 
     s.tipo AS tipo_servidor,
     c.nome AS nome_componente,
+    
     m.tipo AS tipo_metrica,
     rm.valor AS valor_registrado
 FROM registro_monitoramento rm
