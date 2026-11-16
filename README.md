@@ -1,10 +1,10 @@
-# 📊 Banco de Dados - SorveSys
+#  Banco de Dados - SorveSys
 
 Repositório contendo os scripts de modelagem do banco de dados relacional do **SorveSys**. A aplicação é responsável pelo monitoramento contínuo de recursos de Sistemas Operacionais (telemetria de CPU, memória, disco e rede) de infraestruturas de pedágios, aplicando as boas práticas de **ITIL** para Monitoramento de Serviços, Gestão de Incidentes e Gestão de Problemas.
 
 ---
 
-## 📂 Estrutura do Repositório
+##  Estrutura do Repositório
 
 O repositório está organizado da seguinte forma:
 
