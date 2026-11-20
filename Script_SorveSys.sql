@@ -117,7 +117,7 @@ CREATE TABLE chamado (
     CONSTRAINT fk_chamado_servidor 
         FOREIGN KEY (fk_servidor) REFERENCES servidor(id),
     CONSTRAINT chk_motivo_chamado 
-        CHECK (motivo IN ('Inatividade', 'Solicitar Troca', 'Solicitar Analise'))
+        CHECK (motivo IN ('Inatividade', 'Solicitar Troca', 'Solicitar Análise'))
 );
 
 INSERT INTO empresa
